@@ -24,60 +24,90 @@ def hist_equalize(img):
     N = img.shape[0]*img.shape[1]
     cdf_m = cdf_m*255/N
     cdf = np.ma.filled(cdf_m,0).astype('uint8')
-    img2 = cdf[img]
-    cv2.imshow("image", img2)
-    cv2.waitKey(0)
+    img = cdf[img]
+    # cv2.imshow("image", img2)
+    # cv2.waitKey(0)
     # plt.imshow(img2)
     # plt.show()
+    return img
 
 def hough_tf(img, img_):
 
     # img_ = adjust_gamma(img_, 2)
-    # cv2.imshow(" s", img_)
-    # cv2.waitKey(0)
-    # img_= cv2.GaussianBlur(img_,(49,49),0)
-    cv2.imshow("b", img)
-    cv2.waitKey(0)
     lower_color_bound = (0, 150, 180)
     upper_color_bound = (200, 180, 190)
     # _, img_ = cv2.threshold(img_, 200, 255, cv2.THRESH_BINARY)
-    img_ = cv2.inRange(img, lower_color_bound, upper_color_bound)
-    cv2.imshow("a", img_)
-    cv2.waitKey(0)
-    # img_ = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(img_, 20, 20, apertureSize=3)
+    img_thresh = cv2.inRange(img, lower_color_bound, upper_color_bound)
+    # cv2.imshow("a", img_)
+    # cv2.waitKey(0)
+
+    edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
     edges = cv2.GaussianBlur(edges,(35,35),0)
-    # edges = adjust_gamma(edges, 2)
-    # edges = cv2.Sobel(img_,cv2.CV_64F,1,0,ksize=5)
-    cv2.imshow(" s", edges)
-    cv2.waitKey(0)
+    
+    if np.median(img_) < 100:
+
+        img_sharped = cv2.addWeighted(img, 2, cv2.blur(img, (35, 35)), -2, 128)
+        # cv2.imshow("median", img_sharped)
+        # cv2.waitKey(0)
+        lower_color_bound = (140, 150, 135)
+        upper_color_bound = (200, 250, 220)
+        # _, img_ = cv2.threshold(img_, 200, 255, cv2.THRESH_BINARY)
+        img_thresh = cv2.inRange(img_sharped, lower_color_bound, upper_color_bound)
+        # cv2.imshow("a", img_)
+        # cv2.waitKey(0)
+
+        edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
+        edges = cv2.GaussianBlur(edges,(35,35),0)
+
+
+    # cv2.imshow(" s", edges)
+    # cv2.waitKey(0)
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, 10, 10)
-    # print(lines.shape)
+
     for x1, y1, x2, y2, in lines[:,0,:]:
-        # print (x1, y1, x2, y2)
+
         if np.abs((y2 - y1)/(x2 - x1)) < 2:
             continue
         cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
-    # exit(-1)
-    # print(lines)
-    # lines = cv2.HoughLines(edges, 1, np.pi/180, 100)
-    # for rho, theta in lines[0]:
-    #     a = np.cos(theta)
-    #     b = np.sin(theta)
-    #     x0 = a*rho
-    #     y0 = b*rho
-    #     x1 = abs(int(x0 + 1000*(-b)))
-    #     y1 = abs(int(y0 + 1000*(a)))
-    #     x2 = abs(int(x0 - 1000*(-b)))
-    #     y2 = abs(int(y0 - 1000*(a)))
-    #     print (x1, y1, x2, y2)
-    #     cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
     cv2.imshow("lines",img)
     cv2.waitKey(0)
-    # exit(-1)
-    
 
-    return    
+def hough_tf_image(img, img_):
+
+    # img_ = hist_equalize(img_)
+    # img_ = adjust_gamma(img_, 2)
+    # img_ = cv2.GaussianBlur(img_,(5,5),0)
+    _, img_thresh = cv2.threshold(img_, 220, 255, cv2.THRESH_BINARY)
+    edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
+    edges = cv2.GaussianBlur(edges,(49,49),0)
+    
+    if np.median(img_) < 100:
+        # img_sharped = cv2.addWeighted(img_, 4, cv2.blur(img_, (35, 35)), -4, 128)
+        img_sharped = hist_equalize(img_)
+        _, img_thresh2 = cv2.threshold(img_sharped, 180, 255, cv2.THRESH_BINARY)
+        edges2 = cv2.Canny(img_thresh2, 3, 3, apertureSize=3)
+        # edges2 = cv2.addWeighted(edges2, 4, cv2.blur(edges2, (35, 35)), -4, 128)
+        # edges2 = cv2.GaussianBlur(edges2,(49,49),0)
+        # cv2.imshow("edges1", edges)
+        # cv2.waitKey(0)
+        # cv2.imshow("edges2", edges2)
+        # cv2.waitKey(0)
+        edges = edges + edges2
+        edges = adjust_gamma(edges, 1.4)
+        # cv2.imshow("edges_final", edges)
+        # cv2.waitKey(0)
+        # print(np.max(edges))
+    # edges = adjust_gamma(edges, 2)
+    # cv2.imshow(" s", img_thresh)
+    # cv2.waitKey(0)
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 30, 10, 10)
+
+    for x1, y1, x2, y2, in lines[:,0,:]:
+        if np.abs((y2 - y1)/(x2 - x1)) < 2:
+            continue
+        cv2.line(img_, (x1,y1), (x2, y2), (0,255,0), 2)
+    cv2.imshow("lines",img_)
+    cv2.waitKey(0)   
 
 if __name__ == '__main__':
 
@@ -101,15 +131,9 @@ if __name__ == '__main__':
             H, _ = cv2.findHomography(src_pt, dst_pt)
             warped = cv2.warpPerspective(img, H, (1280, 720))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-            # print(img.shape)
-            # exit(-1)
-            # cv2.line(img, (100,900), (902, 900), (0,255,0), 10)
-            # cv2.imshow("lines",img)
-            # cv2.waitKey(0)
-            # cv2.imshow("warped", warped)
+
             hough_tf(warped, warped_)
-            # cv2.imshow("image_warped", warped)
-            # cv2.waitKey(0)
+
     elif sys.argv[2] == 'png':
 
         files = np.sort(glob.glob(sys.argv[1] + '/*', recursive=True))
@@ -126,12 +150,4 @@ if __name__ == '__main__':
             H, _ = cv2.findHomography(src_pt, dst_pt)
             warped = cv2.warpPerspective(img, H, (img.shape[1], img.shape[0]))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-            # cv2.imshow("image", warped)
-            # cv2.waitKey(0)
-            # print(img.shape)
-            # exit(-1)
-            # cv2.line(img, (100,900), (902, 900), (0,255,0), 10)
-            # cv2.imshow("lines",img)
-            # cv2.waitKey(0)
-            # cv2.imshow("warped", warped)
-            hough_tf(warped, warped_)
+            hough_tf_image(warped, warped_)
