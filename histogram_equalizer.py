@@ -41,12 +41,12 @@ if __name__ == '__main__':
         if ret == False:
             break
 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        hist_equalize(img)
-        src_pt = np.array([[549.177, 1025.69], [1892.4, 1025.69],\
-                            [564.661, 1010.21], [1876.92, 1010.21]])
-        dst_pt = np.array([[100, 0], [img.shape[1]-100, 0], \
-                [100, img.shape[0]-100], [img.shape[1]-100, img.shape[0]-100]])
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        # cv2.imshow("test homography", img)
+        # hist_equalize(img)
+        src_pt = np.array([[407, 615], [886, 615],[312, 677],[962, 677] ])
+        dst_pt = np.array([[100, 870], [1520, 870], \
+                [100, 990], [1520, 990]])
 
         H, _ = cv2.findHomography(src_pt, dst_pt)
         warped = cv2.warpPerspective(img, H, (1920, 1080))
