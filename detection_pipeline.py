@@ -19,7 +19,7 @@ def main():
 	fname ='../Problem_2/data_1/data/0000000015.png'
 	IMG = cv2.imread(fname)
 	print(IMG.shape)
-	IMG = IMG[230:IMG.shape[0],0:980,:]
+	IMG = IMG[230:IMG.shape[0],:,:]
 	IMG = cv2.cvtColor(IMG, cv2.COLOR_BGR2GRAY)
 	udimg = undistortImage(IMG)
 	cv2.imshow("Undistorted",udimg)
