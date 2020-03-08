@@ -35,29 +35,35 @@ def hough_tf(img, img_):
 
     # img_ = adjust_gamma(img_, 2)
     lower_color_bound = (0, 150, 180)
-    upper_color_bound = (200, 180, 190)
+    upper_color_bound = (200, 180, 190) 
     # _, img_ = cv2.threshold(img_, 200, 255, cv2.THRESH_BINARY)
-    img_thresh = cv2.inRange(img, lower_color_bound, upper_color_bound)
+    img_thresh = cv2.inRange(img, lower_color_bound, upper_color_bound) ## Does a yellow filter and keeps the white lanes as well. 
     # cv2.imshow("a", img_)
     # cv2.waitKey(0)
 
-    edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
-    edges = cv2.GaussianBlur(edges,(35,35),0)
+    edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3) ## finds lines on a thresholded image using canny. output is edges in random directions
+    # cv2.imshow("a", edges)
+    # cv2.waitKey(0)
+    edges = cv2.GaussianBlur(edges,(35,35),0) # Blurred the random direction edges to no longer see them as edges but as spots on lanes 
+    # cv2.imshow("a", edges)
+    # cv2.waitKey(0)
     
-    if np.median(img_) < 100:
+    if np.median(img_) < 100: # when entering the shaded area, enhance the edges and then do the operation on the image
 
-        img_sharped = cv2.addWeighted(img, 2, cv2.blur(img, (35, 35)), -2, 128)
+        img_sharped = cv2.addWeighted(img, 2, cv2.blur(img, (35, 35)), -2, 128) # sharpen
         # cv2.imshow("median", img_sharped)
         # cv2.waitKey(0)
-        lower_color_bound = (140, 150, 135)
-        upper_color_bound = (200, 250, 220)
+        lower_color_bound = (140, 150, 135) ## use a filter to find points on the lanes
+        upper_color_bound = (200, 250, 220) ## use a filter to find points on the lanes , this was very tricky and a narrow range. 
         # _, img_ = cv2.threshold(img_, 200, 255, cv2.THRESH_BINARY)
-        img_thresh = cv2.inRange(img_sharped, lower_color_bound, upper_color_bound)
-        # cv2.imshow("a", img_)
-        # cv2.waitKey(0)
+        img_thresh = cv2.inRange(img_sharped, lower_color_bound, upper_color_bound) # thresholding 
+        
 
         edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
         edges = cv2.GaussianBlur(edges,(35,35),0)
+
+        cv2.imshow("a", edges)
+        cv2.waitKey(0)
 
 
     # cv2.imshow(" s", edges)
@@ -66,7 +72,7 @@ def hough_tf(img, img_):
 
     for x1, y1, x2, y2, in lines[:,0,:]:
 
-        if np.abs((y2 - y1)/(x2 - x1)) < 2:
+        if np.abs((y2 - y1)/(x2 - x1)) < 2: ## allow lines which are only > ~65degs 
             continue
         cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
     cv2.imshow("lines",img)
@@ -77,24 +83,38 @@ def hough_tf_image(img, img_):
     # img_ = hist_equalize(img_)
     # img_ = adjust_gamma(img_, 2)
     # img_ = cv2.GaussianBlur(img_,(5,5),0)
-    _, img_thresh = cv2.threshold(img_, 220, 255, cv2.THRESH_BINARY)
-    edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
-    edges = cv2.GaussianBlur(edges,(49,49),0)
-    
+    _, img_thresh = cv2.threshold(img_, 220, 255, cv2.THRESH_BINARY) # thresholding image to get a high intensity
+    # cv2.imshow("edges1", img_thresh)
+    # cv2.waitKey(0)
+
+    # REMOVED CANNY FOR NON SHADDY REGIONS TO GET MORE HOUGH LINES
+    # edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3) # find edges on thresholded images
+    # cv2.imshow("edges1", edges)
+    # cv2.waitKey(0)
+    edges = cv2.GaussianBlur(img_thresh,(49,49),0) # Blur the edges to so that random direction lines are just seen as edge patches rather than edges
+    # cv2.imshow("edges1", edges)
+    # cv2.waitKey(0)
+
     if np.median(img_) < 100:
         # img_sharped = cv2.addWeighted(img_, 4, cv2.blur(img_, (35, 35)), -4, 128)
-        img_sharped = hist_equalize(img_)
-        _, img_thresh2 = cv2.threshold(img_sharped, 180, 255, cv2.THRESH_BINARY)
-        edges2 = cv2.Canny(img_thresh2, 3, 3, apertureSize=3)
+        # cv2.imshow("edges1", img_)
+        # cv2.waitKey(0)
+        img_sharped = hist_equalize(img_) # Equalise the image when image is dull
+        # cv2.imshow("edges1", img_sharped)
+        # cv2.waitKey(0)
+        _, img_thresh2 = cv2.threshold(img_sharped, 180, 255, cv2.THRESH_BINARY) # threshold the histogram equalised img
+        # cv2.imshow("edges1", img_thresh2)
+        # cv2.waitKey(0)
+        edges2 = cv2.Canny(img_thresh2, 3, 3, apertureSize=3) # 
         # edges2 = cv2.addWeighted(edges2, 4, cv2.blur(edges2, (35, 35)), -4, 128)
         # edges2 = cv2.GaussianBlur(edges2,(49,49),0)
-        # cv2.imshow("edges1", edges)
+        # cv2.imshow("edges1", edges2)
         # cv2.waitKey(0)
         # cv2.imshow("edges2", edges2)
         # cv2.waitKey(0)
         edges = edges + edges2
         edges = adjust_gamma(edges, 1.4)
-        # cv2.imshow("edges_final", edges)
+        # cv2.imshow("edges1", edges)
         # cv2.waitKey(0)
         # print(np.max(edges))
     # edges = adjust_gamma(edges, 2)
