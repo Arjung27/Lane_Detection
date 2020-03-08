@@ -11,7 +11,7 @@ def undistortImage(image):
 	img = cv2.GaussianBlur(img,(3,3),0)
 	return img 
 
-def curveFit(left,right,img):
+def curveFit(left,right,img,H):
 	mask = np.zeros_like(img)
 	left_lane = np.polyfit(left[1],left[0],2)
 	right_lane = np.polyfit(left[1],left[0],2)
