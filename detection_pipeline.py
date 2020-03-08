@@ -11,8 +11,26 @@ def undistortImage(image):
 	img = cv2.GaussianBlur(img,(3,3),0)
 	return img 
 
-def extractROI(image):
-	return img
+def curveFit(left,right,img):
+	mask = np.zeros_like(img)
+	left_lane = np.polyfit(left[1],left[0],2)
+	right_lane = np.polyfit(left[1],left[0],2)
+	left_poly = np.poly1d(left_lane)
+	right_poly = np.poly1d(right_lane)
+	wspace = np.linspace(0, img.shape[0]-1, img.shape[0])
+	left_fit = left_poly(wspace)
+	right_fit = right_poly(wspace)
+	coordinates_left = np.hstack([left_fit,wspace])
+	coordinates_right = np.hstack([right_fit,wspace])
+	points = np.hstack((coordinates_left, coordinates_right))
+
+	cv2.fillPoly(mask, points,(0,255,0))
+	image = cv2.warpPerspective(mask, np.linalg.inv(H),(IMG.shape[1], IMG.shape[0]))
+	fimage = cv2.addWeighted(IMG, 0.8, image, 0.2, 0.0)
+	return fimage
+
+
+
 
 
 def main():
