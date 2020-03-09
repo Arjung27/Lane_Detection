@@ -4,6 +4,7 @@ import glob
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
+from detection_pipeline import curveFit
 
 def adjust_gamma(image, gamma=1.0):
     # build a lookup table mapping the pixel values [0, 255] to
@@ -84,8 +85,10 @@ def hough_tf(img, img_):
     # cv2.imshow(" s", edges)
     # cv2.waitKey(0)
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, 10, 10)
-    left_pts = np.array([])
-    right_pts = np.array([])
+    #left_pts = np.array([])
+    #right_pts = np.array([])
+    left_pts = []
+    right_pts = []
     for x1, y1, x2, y2, in lines[:,0,:]:
 
         if np.abs((y2 - y1)/(x2 - x1)) < 5: ## allow lines which are only > ~65degs 
@@ -95,22 +98,28 @@ def hough_tf(img, img_):
             continue
 
         if x1 < img.shape[1]/2:
-            left_pts = np.append(left_pts, (x1, y1))
+            #left_pts = np.append(left_pts, [x1, y1])
+            left_pts.append(([x1,y1]))
         elif x1 > img.shape[1]/2:
-            right_pts = np.append(right_pts, (x1, y1))     
+            #right_pts = np.append(right_pts, [x1, y1])
+            right_pts.append(([x1,y1]))     
         if x2 < img.shape[1]/2:
-            left_pts = np.append(left_pts, (x2, y2))
+            #left_pts = np.append(left_pts, [x2, y2])
+            left_pts.append(([x1,y1]))
         elif x2 > img.shape[1]/2:
-            right_pts = np.append(right_pts, (x2, y2))
+            #right_pts = np.append(right_pts, [x2, y2])
+            right_pts.append(([x1,y1]))
                          
         cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
+    left_pts = np.asarray(left_pts)
+    right_pts = np.asarray(right_pts)
     if left_pts.shape == (0,):
         left_pts = np.zeros_like(right_pts)
     elif right_pts.shape == (0,):
         right_pts = np.zeros_like(left_pts)
 
-    print(left_pts)
-    print(right_pts)
+    #print(left_pts.shape)
+    #print(right_pts.shape)
 
     return left_pts, right_pts, img
 
@@ -192,6 +201,8 @@ if __name__ == '__main__':
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 
             left_pts, right_pts, lines = hough_tf(warped, warped_)
+            #print(right_pts.shape)
+            lines = curveFit(left_pts,right_pts,lines)
             Hinv = np.linalg.inv(H)
             Hinv = Hinv/Hinv[2,2]
             blank_white = 255*np.ones([720, 1280, 3])
@@ -225,3 +236,5 @@ if __name__ == '__main__':
             warped = cv2.warpPerspective(img, H, (img.shape[1], img.shape[0]))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
             lines = hough_tf_image(warped, warped_)
+
+
