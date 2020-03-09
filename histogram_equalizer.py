@@ -48,35 +48,71 @@ def hough_tf(img, img_):
     # cv2.imshow("a", edges)
     # cv2.waitKey(0)
     
+    # print(np.median(img))
     if np.median(img_) < 100: # when entering the shaded area, enhance the edges and then do the operation on the image
 
-        img_sharped = cv2.addWeighted(img, 2, cv2.blur(img, (35, 35)), -2, 128) # sharpen
+        img_sharped = cv2.addWeighted(img, 8, cv2.blur(img, (35, 35)), -8, 128) # sharpen
         # cv2.imshow("median", img_sharped)
         # cv2.waitKey(0)
         lower_color_bound = (140, 150, 135) ## use a filter to find points on the lanes
         upper_color_bound = (200, 250, 220) ## use a filter to find points on the lanes , this was very tricky and a narrow range. 
-        # _, img_ = cv2.threshold(img_, 200, 255, cv2.THRESH_BINARY)
         img_thresh = cv2.inRange(img_sharped, lower_color_bound, upper_color_bound) # thresholding 
         
-
         edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
+        # cv2.imshow("a", edges)
+        # cv2.waitKey(0)
+        edges = cv2.GaussianBlur(edges,(35,35),0)
+    
+    elif np.median(img) > 158: # when exiting the shaded area, 
+
+        # img_sharped = cv2.addWeighted(img, 4, cv2.blur(img, (35, 35)), -4, 128) # sharpen
+        # cv2.imshow("median", img_sharped)
+        # cv2.waitKey(0)
+        lower_color_bound = (120, 180, 200) ## use a filter to find points on the lanes
+        upper_color_bound = (200, 250, 250) ## use a filter to find points on the lanes , this was very tricky and a narrow range. 
+        img_thresh = cv2.inRange(img, lower_color_bound, upper_color_bound) # thresholding 
+        
+        edges = cv2.Canny(img_thresh, 20, 20, apertureSize=3)
+        # cv2.imshow("a", edges)
+        # cv2.waitKey(0)
         edges = cv2.GaussianBlur(edges,(35,35),0)
 
-        cv2.imshow("a", edges)
-        cv2.waitKey(0)
+        # cv2.imshow("a", edges)
+        # cv2.waitKey(0)
 
 
     # cv2.imshow(" s", edges)
     # cv2.waitKey(0)
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, 10, 10)
-
+    left_pts = np.array([])
+    right_pts = np.array([])
     for x1, y1, x2, y2, in lines[:,0,:]:
 
-        if np.abs((y2 - y1)/(x2 - x1)) < 2: ## allow lines which are only > ~65degs 
+        if np.abs((y2 - y1)/(x2 - x1)) < 5: ## allow lines which are only > ~65degs 
             continue
+
+        if (x1 < 120 or x2 < 130) or (x1 > 300 or x2 > 350) and (x1 < img.shape[1]-300 or x2 < img.shape[1]-350):
+            continue
+
+        if x1 < img.shape[1]/2:
+            left_pts = np.append(left_pts, (x1, y1))
+        elif x1 > img.shape[1]/2:
+            right_pts = np.append(right_pts, (x1, y1))     
+        if x2 < img.shape[1]/2:
+            left_pts = np.append(left_pts, (x2, y2))
+        elif x2 > img.shape[1]/2:
+            right_pts = np.append(right_pts, (x2, y2))
+                         
         cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
-    cv2.imshow("lines",img)
-    cv2.waitKey(0)
+    if left_pts.shape == (0,):
+        left_pts = np.zeros_like(right_pts)
+    elif right_pts.shape == (0,):
+        right_pts = np.zeros_like(left_pts)
+
+    print(left_pts)
+    print(right_pts)
+
+    return left_pts, right_pts, img
 
 def hough_tf_image(img, img_):
 
@@ -99,15 +135,15 @@ def hough_tf_image(img, img_):
         # img_sharped = cv2.addWeighted(img_, 4, cv2.blur(img_, (35, 35)), -4, 128)
         # cv2.imshow("edges1", img_)
         # cv2.waitKey(0)
-        img_sharped = hist_equalize(img_) # Equalise the image when image is dull
+        # img_sharped = hist_equalize(img_) # Equalise the image when image is dull
         # cv2.imshow("edges1", img_sharped)
         # cv2.waitKey(0)
-        _, img_thresh2 = cv2.threshold(img_sharped, 180, 255, cv2.THRESH_BINARY) # threshold the histogram equalised img
+        _, img_thresh2 = cv2.threshold(img_, 80, 255, cv2.THRESH_BINARY) # threshold the histogram equalised img
         # cv2.imshow("edges1", img_thresh2)
         # cv2.waitKey(0)
         edges2 = cv2.Canny(img_thresh2, 3, 3, apertureSize=3) # 
         # edges2 = cv2.addWeighted(edges2, 4, cv2.blur(edges2, (35, 35)), -4, 128)
-        # edges2 = cv2.GaussianBlur(edges2,(49,49),0)
+        edges2 = cv2.GaussianBlur(edges2,(5,5),0)
         # cv2.imshow("edges1", edges2)
         # cv2.waitKey(0)
         # cv2.imshow("edges2", edges2)
@@ -118,15 +154,21 @@ def hough_tf_image(img, img_):
         # cv2.waitKey(0)
         # print(np.max(edges))
     # edges = adjust_gamma(edges, 2)
-    # cv2.imshow(" s", img_thresh)
-    # cv2.waitKey(0)
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 30, 10, 10)
+    cv2.imshow(" s", edges)
+    cv2.waitKey(0)
 
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 30, 10, 10)
     for x1, y1, x2, y2, in lines[:,0,:]:
         if np.abs((y2 - y1)/(x2 - x1)) < 2:
             continue
-        cv2.line(img_, (x1,y1), (x2, y2), (0,255,0), 2)
-    cv2.imshow("lines",img_)
+
+        if (x1 < 20 or x2 < 30) or (x1 > img.shape[1]-30 or x2 > img.shape[1]-35):
+            continue
+        # if (x1 < img.shape[1]/2 and x2 < img.shape[1]/2)
+        #     x_left.append(x1)
+        #     x_left.
+        cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
+    cv2.imshow("lines",img)
     cv2.waitKey(0)   
 
 if __name__ == '__main__':
@@ -141,18 +183,32 @@ if __name__ == '__main__':
             if ret == False:
                 break
 
-            # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            # cv2.imshow("test homography", img)
-            # hist_equalize(img)
             src_pt = np.array([[407, 615], [886, 615],[312, 677],[962, 677] ])
-            dst_pt = np.array([[150, 510], [1080, 510], \
+            dst_pt = np.array([[150, 630], [1080, 630], \
                     [150, 700], [1080, 700]])
 
             H, _ = cv2.findHomography(src_pt, dst_pt)
             warped = cv2.warpPerspective(img, H, (1280, 720))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 
-            hough_tf(warped, warped_)
+            left_pts, right_pts, lines = hough_tf(warped, warped_)
+            Hinv = np.linalg.inv(H)
+            Hinv = Hinv/Hinv[2,2]
+            blank_white = 255*np.ones([720, 1280, 3])
+            # blank_black = 255*np.zeros([720, 1280, 3])
+            blank_backProj = cv2.warpPerspective(blank_white, Hinv, (1280, 720))
+            _, thresh1 = cv2.threshold(blank_backProj, 127, 255, cv2.THRESH_BINARY_INV)
+            # cv2.imshow("test", thresh1)
+            # cv2.waitKey(0)
+            patch = np.logical_and(img, thresh1)
+            img_dummy = np.zeros_like(img)
+            img_dummy[patch] = img[patch]
+            backProjected = cv2.warpPerspective(lines, Hinv, (1280, 720))
+            # patch2 = np.logical_or(img_dummy, backProjected)
+            img_dummy = img_dummy + backProjected
+            # print(backProjected)
+            cv2.imshow("test", img_dummy)
+            cv2.waitKey(0)
 
     elif sys.argv[2] == 'png':
 
@@ -165,9 +221,7 @@ if __name__ == '__main__':
             dst_pt = np.array([[200, img.shape[0]-450], [img.shape[1]-100, img.shape[0]-450], \
                     [200, img.shape[0] - 50], [img.shape[1]-100, img.shape[0] - 50]])
 
-            # cv2.imshow("image", img)
-            # cv2.waitKey(0)
             H, _ = cv2.findHomography(src_pt, dst_pt)
             warped = cv2.warpPerspective(img, H, (img.shape[1], img.shape[0]))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-            hough_tf_image(warped, warped_)
+            lines = hough_tf_image(warped, warped_)
