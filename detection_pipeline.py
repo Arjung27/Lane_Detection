@@ -11,22 +11,33 @@ def undistortImage(image):
 	img = cv2.GaussianBlur(img,(3,3),0)
 	return img 
 
-def curveFit(left,right,img,H):
-	mask = np.zeros_like(img)
-	left_lane = np.polyfit(left[1],left[0],2)
-	right_lane = np.polyfit(left[1],left[0],2)
+def curveFit(left,right,img):
+	mask = np.zeros_like(img).astype(np.uint8)
+	print(img.shape)
+	left_lane = np.polyfit(left[:,1],left[:,0],1)
+	right_lane = np.polyfit(right[:,1],right[:,0],2)
 	left_poly = np.poly1d(left_lane)
 	right_poly = np.poly1d(right_lane)
 	wspace = np.linspace(0, img.shape[0]-1, img.shape[0])
 	left_fit = left_poly(wspace)
 	right_fit = right_poly(wspace)
-	coordinates_left = np.hstack([left_fit,wspace])
-	coordinates_right = np.hstack([right_fit,wspace])
+	#coordinates_left = np.hstack([left_fit,wspace])
+	coordinates_left = np.array([np.transpose(np.vstack([left_fit, wspace]))])
+	coordinates_left = coordinates_left[0].astype(np.int32)
+	#coordinates_right = np.hstack([right_fit,wspace])
+	coordinates_right = np.array([np.transpose(np.vstack([right_fit, wspace]))])
+	coordinates_right = coordinates_right[0].astype(np.int32)
+	#cv2.polylines(img, [coordinates_left], False, (0,0,0),5)
+	#cv2.polylines(img, [coordinates_right], False, (0,0,0),5)
+	
 	points = np.hstack((coordinates_left, coordinates_right))
-
-	cv2.fillPoly(mask, points,(0,255,0))
-	image = cv2.warpPerspective(mask, np.linalg.inv(H),(IMG.shape[1], IMG.shape[0]))
-	fimage = cv2.addWeighted(IMG, 0.8, image, 0.2, 0.0)
+	points = np.array([points],dtype=np.int32)[0]
+	points = np.array([[[points[0,0],points[0,1]],[points[0,2],points[0,3]],[points[360,2],points[360,3]]\
+		,[points[719,2],points[719,3]]\
+		,[points[719,0],points[719,1]],[points[360,0],points[360,1]]]])
+	cv2.fillPoly(mask,points,(0,255,0))
+	#image = cv2.warpPerspective(mask, np.linalg.inv(H),(IMG.shape[1], IMG.shape[0]))
+	fimage = cv2.addWeighted(img, 0.5, mask, 0.5, 0.0)
 	return fimage
 
 
