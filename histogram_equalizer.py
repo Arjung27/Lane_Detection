@@ -4,6 +4,7 @@ import glob
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def adjust_gamma(image, gamma=1.0):
     # build a lookup table mapping the pixel values [0, 255] to
@@ -33,6 +34,14 @@ def hist_equalize(img):
 
 def hough_tf(img, img_):
 
+
+    # img_ = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)   
+    # cv2.imshow("test", img_)
+    # cv2.waitKey(0)
+    # img_ = cv2.equalizeHist(img_)
+    # cv2.imshow("test", img_)
+    # cv2.waitKey(0)
+    # return [], [], img_       
     # img_ = adjust_gamma(img_, 2)
     lower_color_bound = (0, 150, 180)
     upper_color_bound = (200, 180, 190) 
@@ -109,9 +118,6 @@ def hough_tf(img, img_):
     elif right_pts.shape == (0,):
         right_pts = np.zeros_like(left_pts)
 
-    print(left_pts)
-    print(right_pts)
-
     return left_pts, right_pts, img
 
 def hough_tf_image(img, img_):
@@ -154,22 +160,93 @@ def hough_tf_image(img, img_):
         # cv2.waitKey(0)
         # print(np.max(edges))
     # edges = adjust_gamma(edges, 2)
-    cv2.imshow(" s", edges)
-    cv2.waitKey(0)
+    # cv2.imshow(" s", edges)
+    # cv2.waitKey(0)
 
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, 30, 10, 10)
+    left_pts = np.array([])
+    right_pts = np.array([])
     for x1, y1, x2, y2, in lines[:,0,:]:
         if np.abs((y2 - y1)/(x2 - x1)) < 2:
             continue
 
         if (x1 < 20 or x2 < 30) or (x1 > img.shape[1]-30 or x2 > img.shape[1]-35):
             continue
-        # if (x1 < img.shape[1]/2 and x2 < img.shape[1]/2)
-        #     x_left.append(x1)
-        #     x_left.
+        
+        if x1 < img.shape[1]/2:
+            left_pts = np.append(left_pts, (x1, y1))
+        elif x1 > img.shape[1]/2:
+            right_pts = np.append(right_pts, (x1, y1))     
+        if x2 < img.shape[1]/2:
+            left_pts = np.append(left_pts, (x2, y2))
+        elif x2 > img.shape[1]/2:
+            right_pts = np.append(right_pts, (x2, y2))
+                         
         cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
-    cv2.imshow("lines",img)
-    cv2.waitKey(0)   
+    if left_pts.shape == (0,):
+        left_pts = np.zeros_like(right_pts)
+    elif right_pts.shape == (0,):
+        right_pts = np.zeros_like(left_pts)
+
+    return left_pts, right_pts, img 
+
+def hist_count(img, img_):
+
+    # img = cv2.medianBlur(img, 81)
+    # img = cv2.GaussianBlur(img,(5,5),0)
+    # img_sobel = cv2.Sobel(img, cv2.CV_64F, 1, 0, 5)
+    # img_sobel[..., 0] = ((img_sobel[..., 0] - np.min(img_sobel[..., 0]))*255/(np.max(img_sobel[..., 0]))).astype(np.uint8)
+    # img_sobel[..., 1] = ((img_sobel[..., 1] - np.min(img_sobel[..., 1]))*255/(np.max(img_sobel[..., 1]))).astype(np.uint8)
+    # img_sobel[..., 2] = ((img_sobel[..., 2] - np.min(img_sobel[..., 2]))*255/(np.max(img_sobel[..., 2]))).astype(np.uint8)
+    # print(np.min(img_sobel))
+    # print(img_sobel)
+    # exit(-1)
+    # cv2.imshow("sobel", img)
+    # cv2.waitKey(0)
+    
+    # hist0,bins0 = np.histogram(img[:,:,0].flatten(),256,[0,256])
+    # hist1,bins1 = np.histogram(img[:,:,1].flatten(),256,[0,256])
+    # hist2,bins2 = np.histogram(img[:,:,2].flatten(),256,[0,256])
+    # plt.plot(bins0[0:256], hist0, 'b')
+    # plt.plot(bins1[0:256], hist1, 'g')
+    # plt.plot(bins2[0:256], hist2, 'r')
+    # plt.show()
+    # plt.close()
+    # lower_color_bound = (0, 150, 150) ## use a filter to find points on the lanes
+    # upper_color_bound = (140, 195, 195) ## use a filter to find points on the lanes , this was very tricky and a narrow range.
+    # img_thresh = cv2.inRange(img, lower_color_bound, upper_color_bound) # thresholding
+    # cv2.imshow("yellow hopefully", img_thresh) 
+    # cv2.waitKey(0)
+    # exit(-1)
+
+    # for x, y do blue image plot. 
+    fig1 = plt.figure()
+    ax1 = fig1.gca(projection='3d')
+    graph = np.zeros([img.shape[0], img.shape[1], 2])
+    graph[:,:,0] = img[:,:,0]
+    graph[:,:,1] = (img[:,:,1] + img[:,:,2])/(abs(img[:,:,1] - img[:,:,2]) + 1)
+    X = np.arange(0,graph.shape[0])
+    Y = np.arange(0,graph.shape[1])
+
+    X, Y = np.meshgrid(X, Y)
+    Z = (img[X, Y,1] + img[X,Y,2])/(abs(img[X,Y,1] - img[X,Y,2]) + 1)
+    # print(np.arange(0,graph.shape[0]).shape, np.arange(0,graph.shape[1]).shape, graph[:,:,1].shape)
+    surf = ax1.plot_surface(X, Y, Z)
+    fig2 = plt.figure()
+    ax2 = fig2.gca(projection='3d')
+    Z2 = img[X,Y,0]
+    surf = ax2.plot_surface(X, Y, Z2)
+    plt.show()
+    exit(-1)
+    # surf = (X, Y, Z, cmap=cm.coolwarm,
+                    #    linewidth=0, antialiased=False)
+    # hist_0 = cv2.calcHist([img],[0],None,[256],[0,256])
+    # hist_1 = cv2.calcHist([img],[1],None,[256],[0,256])
+    # hist_2 = cv2.calcHist([img],[2],None,[256],[0,256])
+
+
+
+
 
 if __name__ == '__main__':
 
@@ -185,13 +262,14 @@ if __name__ == '__main__':
 
             src_pt = np.array([[407, 615], [886, 615],[312, 677],[962, 677] ])
             dst_pt = np.array([[150, 630], [1080, 630], \
-                    [150, 700], [1080, 700]])
+                    [150, 701], [1080, 701]])
 
             H, _ = cv2.findHomography(src_pt, dst_pt)
             warped = cv2.warpPerspective(img, H, (1280, 720))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 
             left_pts, right_pts, lines = hough_tf(warped, warped_)
+            # hist_count(warped, warped_)
             Hinv = np.linalg.inv(H)
             Hinv = Hinv/Hinv[2,2]
             blank_white = 255*np.ones([720, 1280, 3])
@@ -224,4 +302,19 @@ if __name__ == '__main__':
             H, _ = cv2.findHomography(src_pt, dst_pt)
             warped = cv2.warpPerspective(img, H, (img.shape[1], img.shape[0]))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-            lines = hough_tf_image(warped, warped_)
+            left_pts, right_pts, lines = hough_tf_image(warped, warped_)
+            # hist_count(warped, warped_)
+            Hinv = np.linalg.inv(H)
+            Hinv = Hinv/Hinv[2,2]
+            blank_white = 255*np.ones([img.shape[0], img.shape[1], 3])
+            # blank_black = 255*np.zeros([720, 1280, 3])
+            blank_backProj = cv2.warpPerspective(blank_white, Hinv, (img.shape[1], img.shape[0]))
+            _, thresh1 = cv2.threshold(blank_backProj, 127, 255, cv2.THRESH_BINARY_INV)
+            patch = np.logical_and(img, thresh1)
+            img_dummy = np.zeros_like(img)
+            img_dummy[patch] = img[patch]
+            backProjected = cv2.warpPerspective(lines, Hinv, (img.shape[1], img.shape[0]))
+            img_dummy = img_dummy + backProjected
+
+            cv2.imshow("test", img_dummy)
+            cv2.waitKey(0)
