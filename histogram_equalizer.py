@@ -5,6 +5,8 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 from detection_pipeline import curveFit
+from detection_pipeline import predicTurn
+
 
 def adjust_gamma(image, gamma=1.0):
     # build a lookup table mapping the pixel values [0, 255] to
@@ -123,6 +125,8 @@ def hough_tf(img, img_):
 
     return left_pts, right_pts, img
 
+
+
 def hough_tf_image(img, img_):
 
     # img_ = hist_equalize(img_)
@@ -178,7 +182,10 @@ def hough_tf_image(img, img_):
         #     x_left.
         cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
     cv2.imshow("lines",img)
-    cv2.waitKey(0)   
+    cv2.waitKey(0)
+
+
+
 
 if __name__ == '__main__':
 
@@ -186,6 +193,8 @@ if __name__ == '__main__':
         video_file = sys.argv[1]
         cap = cv2.VideoCapture(video_file)
 
+        arrl_store = []
+        arrr_store = []
         while (cap.isOpened()):
 
             ret, img = cap.read()
@@ -201,8 +210,19 @@ if __name__ == '__main__':
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
 
             left_pts, right_pts, lines = hough_tf(warped, warped_)
-            #print(right_pts.shape)
-            lines = curveFit(left_pts,right_pts,lines)
+            if len(arrl_store)<3:
+                arrl_store.append(left_pts)
+                arrr_store.append(right_pts)
+            elif right_pts[right_pts.shape[0]-5,0]!=0 and left_pts[left_pts.shape[0]-5,0]!=0:
+                arrr_store.pop()
+                arrr_store.append(right_pts)
+                arrl_store.pop()
+                arrl_store.append(left_pts)
+            arr_templ = np.asarray(arrl_store)
+            arr_tempr = np.asarray(arrr_store)
+            lefty = arr_templ[arr_templ.shape[0]-1]
+            righty = arr_tempr[arr_tempr.shape[0]-1]    
+            lines,prediction = curveFit(lefty,righty,lines)
             Hinv = np.linalg.inv(H)
             Hinv = Hinv/Hinv[2,2]
             blank_white = 255*np.ones([720, 1280, 3])
@@ -217,6 +237,8 @@ if __name__ == '__main__':
             backProjected = cv2.warpPerspective(lines, Hinv, (1280, 720))
             # patch2 = np.logical_or(img_dummy, backProjected)
             img_dummy = img_dummy + backProjected
+            #prediction = predicTurn(img_dummy,L,R)
+            cv2.putText(img_dummy, prediction, (200, 50),cv2.FONT_HERSHEY_SIMPLEX, 1.5,(0,255,0),2, cv2.LINE_AA)
             # print(backProjected)
             cv2.imshow("test", img_dummy)
             cv2.waitKey(0)
