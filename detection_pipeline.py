@@ -41,10 +41,10 @@ def curveFit(left,right,img):
 	#coordinates_right = np.hstack([right_fit,wspace])
 	coordinates_right = np.array([np.transpose(np.vstack([right_fit, wspace]))])
 	coordinates_right = coordinates_right[0].astype(np.int32)
-	cv2.polylines(img, [coordinates_left], False, (0,0,0),5)
-	cv2.polylines(img, [coordinates_right], False, (0,0,0),5)
+	#cv2.polylines(img, [coordinates_left], False, (0,0,0),5)
+	#cv2.polylines(img, [coordinates_right], False, (0,0,0),5)
 
-	lPoint, rPoint = left_poly(0), right_poly(0)
+	lPoint, rPoint = left_poly(coordinates_right.shape[0]/2), right_poly(coordinates_right.shape[0]/2)
 	pred = predicTurn(img,lPoint,rPoint)
 	
 	points = np.hstack((coordinates_left, coordinates_right))
