@@ -122,10 +122,13 @@ def hough_tf(img, img_):
 
 def hough_tf_image(img, img_):
 
+    
     # img_ = hist_equalize(img_)
     # img_ = adjust_gamma(img_, 2)
     # img_ = cv2.GaussianBlur(img_,(5,5),0)
     _, img_thresh = cv2.threshold(img_, 220, 255, cv2.THRESH_BINARY) # thresholding image to get a high intensity
+    cv2.imshow("fig", img_thresh)
+    cv2.waitKey(0)
     # cv2.imshow("edges1", img_thresh)
     # cv2.waitKey(0)
 

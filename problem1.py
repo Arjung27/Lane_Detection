@@ -26,10 +26,14 @@ def hist_equalize(img):
     # cdf_m = cdf_m*255/N
     # cdf = np.ma.filled(cdf_m,0).astype('uint8')
     # img2 = cdf[img_thresh2]
+    plt.hist(img.ravel(), bins=256, range=(0.0, 256.0))
+    plt.show()
     hist_b = cv2.equalizeHist(img_thresh2[:,:,0])
     hist_g = cv2.equalizeHist(img_thresh2[:,:,1])
     hist_r = cv2.equalizeHist(img_thresh2[:,:,2])
     img2 = np.dstack([hist_b, hist_g, hist_r])
+    plt.hist(img2.ravel(), bins=256, range=(10.0, 256.0))
+    plt.show()
     cv2.imshow("image", img2)
     cv2.waitKey(0)
     # plt.imshow(img2)
