@@ -12,18 +12,38 @@ def undistortImage(image):
 	return img
 
 def predicTurn(img,l_point,r_point):
-    i_center = img.shape[1]/2
-    m_point = (l_point+r_point)/2
+    i_center = img.shape[1]/2-25
+    m_point = l_point + (r_point-l_point)/2
     print(m_point,i_center)
-    if m_point==i_center:
+    if abs(m_point-i_center)<15:
         predict = "Straight"
-    elif m_point<i_center:
+    elif (m_point-i_center)<-30:
         predict = "Left Turn"
     else:
         predict = "Right Turn"
     return predict
 
+def predicTurnRevamped(img,lp_first,lp_second):
+    
+    if lp_first - lp_second>0:
+        predict = "Left Turn"
+    elif lp_first - lp_second<0:
+        predict = "Right Turn"
+    else:
+        predict = "Straight"
+    return predict
 
+def radiusCurvature(p_x,p_y):
+	radC = ((1 + (2*p_y[0]*p_x + p_y[1])**2)**(1.5)) / (2*p_y[0])
+	print(np.mean(radC))
+	crad = np.mean(radC)
+	if crad>0:
+		pred = "Turn Right"
+	elif crad<0:
+		pred = "Turn Left"
+	else:
+		pred = "Straight"
+	return pred
 
 
 def curveFit(left,right,img):
@@ -41,12 +61,12 @@ def curveFit(left,right,img):
 	#coordinates_right = np.hstack([right_fit,wspace])
 	coordinates_right = np.array([np.transpose(np.vstack([right_fit, wspace]))])
 	coordinates_right = coordinates_right[0].astype(np.int32)
-	#cv2.polylines(img, [coordinates_left], False, (0,0,0),5)
-	#cv2.polylines(img, [coordinates_right], False, (0,0,0),5)
-
-	lPoint, rPoint = left_poly(coordinates_right.shape[0]/2), right_poly(coordinates_right.shape[0]/2)
-	pred = predicTurn(img,lPoint,rPoint)
-	
+	cv2.polylines(img, [coordinates_left], False, (0,0,0),10)
+	cv2.polylines(img, [coordinates_right], False, (0,0,0),10)
+	lPoint, rPoint = coordinates_left[200][0], coordinates_right[200][0]
+	#lPoint, rPoint = coordinates_left[0][0], coordinates_left[150][0]
+	#pred = predicTurn(img,lPoint,rPoint)
+	pred = radiusCurvature(wspace,right_lane)
 	points = np.hstack((coordinates_left, coordinates_right))
 	points = np.array([points],dtype=np.int32)[0]
 	points = np.array([[[points[0,0],points[0,1]],[points[0,2],points[0,3]],[points[points.shape[0]/2,2]\
@@ -58,10 +78,6 @@ def curveFit(left,right,img):
 	fimage = cv2.addWeighted(img, 0.5, mask, 0.5, 0.0)
 
 	return fimage, pred
-
-
-
-
 
 def main():
 	fname ='../Problem_2/data_1/data/0000000015.png'
