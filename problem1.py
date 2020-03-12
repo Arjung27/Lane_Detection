@@ -26,16 +26,16 @@ def hist_equalize(img):
     # cdf_m = cdf_m*255/N
     # cdf = np.ma.filled(cdf_m,0).astype('uint8')
     # img2 = cdf[img_thresh2]
-    plt.hist(img.ravel(), bins=256, range=(0.0, 256.0))
-    plt.show()
+    # plt.hist(img.ravel(), bins=256, range=(0.0, 256.0))
+    # plt.show()
     hist_b = cv2.equalizeHist(img_thresh2[:,:,0])
     hist_g = cv2.equalizeHist(img_thresh2[:,:,1])
     hist_r = cv2.equalizeHist(img_thresh2[:,:,2])
     img2 = np.dstack([hist_b, hist_g, hist_r])
-    plt.hist(img2.ravel(), bins=256, range=(10.0, 256.0))
-    plt.show()
-    cv2.imshow("image", img2)
-    cv2.waitKey(0)
+    # plt.hist(img2.ravel(), bins=256, range=(10.0, 256.0))
+    # plt.show()
+    # cv2.imshow("image", img2)
+    # cv2.waitKey(0)
     # plt.imshow(img2)
     # plt.show()
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     video_file = sys.argv[1]
     cap = cv2.VideoCapture(video_file)
-
+    vidWriter = cv2.VideoWriter("./video_output.mp4",cv2.VideoWriter_fourcc(*'mp4v'), 24, (1920, 1080))
     while (cap.isOpened()):
 
         ret, img = cap.read()
@@ -52,6 +52,7 @@ if __name__ == '__main__':
 
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         hist_equalize(img)
+        vidWriter.write(img)
         # src_pt = np.array([[549.177, 1025.69], [1892.4, 1025.69],\
         #                     [564.661, 1010.21], [1876.92, 1010.21]])
         # dst_pt = np.array([[100, 0], [img.shape[1]-100, 0], \
@@ -61,3 +62,4 @@ if __name__ == '__main__':
         # warped = cv2.warpPerspective(img, H, (1920, 1080))
         # cv2.imshow("image_warped", warped)
         # cv2.waitKey(0)
+    vidWriter.release()    

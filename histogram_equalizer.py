@@ -125,10 +125,20 @@ def hough_tf(img, img_):
     left_pts = np.asarray(left_pts)
     right_pts = np.asarray(right_pts)
     if left_pts.shape == (0,):
-        left_pts = np.zeros_like(right_pts)
+        if right_pts.shape == (0,):
+            left_pts = [[0,0], [0,0]]
+            right_pts = [[0,0], [0,0]]
+        else:    
+            left_pts = np.zeros_like(right_pts)
     elif right_pts.shape == (0,):
-        right_pts = np.zeros_like(left_pts)
-
+        if left_pts.shape == (0,):
+            left_pts = [[0,0], [0,0]]
+            right_pts = [[0,0], [0,0]]
+        else:    
+            right_pts = np.zeros_like(left_pts)
+        
+    cv2.imshow(" s", img)
+    cv2.waitKey(0)
     return left_pts, right_pts, img
 
 
@@ -140,8 +150,8 @@ def hough_tf_image(img, img_):
     # img_ = adjust_gamma(img_, 2)
     # img_ = cv2.GaussianBlur(img_,(5,5),0)
     _, img_thresh = cv2.threshold(img_, 220, 255, cv2.THRESH_BINARY) # thresholding image to get a high intensity
-    cv2.imshow("fig", img_thresh)
-    cv2.waitKey(0)
+    # cv2.imshow("fig", img_thresh)
+    # cv2.waitKey(0)
     # cv2.imshow("edges1", img_thresh)
     # cv2.waitKey(0)
 
@@ -203,7 +213,9 @@ def hough_tf_image(img, img_):
         left_pts = np.zeros_like(right_pts)
     elif right_pts.shape == (0,):
         right_pts = np.zeros_like(left_pts)
-
+    cv2.imshow(" s", img)
+    cv2.waitKey(0)
+    # print(right_pts.shape)
     return left_pts, right_pts, img 
 
 def hist_count(img, img_):
@@ -271,7 +283,7 @@ if __name__ == '__main__':
     if sys.argv[2] == 'mp4':
         video_file = sys.argv[1]
         cap = cv2.VideoCapture(video_file)
-        vidWriter = cv2.VideoWriter("video_output",cv2.VideoWriter_fourcc(*'mp4v'), 24, (1280,720))
+        vidWriter = cv2.VideoWriter("./video_output.mp4",cv2.VideoWriter_fourcc(*'mp4v'), 24, (1280,720))
 
         arrl_store = []
         arrr_store = []
@@ -291,6 +303,10 @@ if __name__ == '__main__':
 
             left_pts, right_pts, lines = hough_tf(warped, warped_)
             # hist_count(warped, warped_)
+
+            left_pts = np.asarray(left_pts)
+            right_pts = np.asarray(right_pts)
+
             if len(arrl_store)<3:
                 arrl_store.append(left_pts)
                 arrr_store.append(right_pts)
@@ -323,15 +339,16 @@ if __name__ == '__main__':
             cv2.putText(img_dummy, prediction, (200, 50),cv2.FONT_HERSHEY_SIMPLEX, 1.5,(0,255,0),2,\
             cv2.LINE_AA)
             # print(backProjected)
-            #cv2.imshow("test", img_dummy)
+            cv2.imshow("test", img_dummy)
             #cv2.imwrite("lane_mask_pred.jpg",img_dummy)
-            #cv2.waitKey(0)
-            vidWriter.write(img_dummy.astype(np.uint8))
-            vidWriter.release()
+            cv2.waitKey(0)
 
+            vidWriter.write(img_dummy.astype(np.uint8))
+    
     elif sys.argv[2] == 'png':
 
         files = np.sort(glob.glob(sys.argv[1] + '/*', recursive=True))
+        vidWriter = cv2.VideoWriter("./video_output_image.mp4",cv2.VideoWriter_fourcc(*'mp4v'), 24, (1392, 512))
         for file in files:
             # print(file)
             img = cv2.imread(file)
@@ -357,7 +374,8 @@ if __name__ == '__main__':
             backProjected = cv2.warpPerspective(lines, Hinv, (img.shape[1], img.shape[0]))
             img_dummy = img_dummy + backProjected
 
-            cv2.imshow("test", img_dummy)
-            cv2.waitKey(0)
+            # cv2.imshow("test", img_dummy)
+            # cv2.waitKey(0)
 
     
+    vidWriter.release()
