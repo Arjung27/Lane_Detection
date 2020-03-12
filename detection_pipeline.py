@@ -49,7 +49,7 @@ def radiusCurvature(p_x,p_y):
 	return pred
 
 
-def curveFit(left,right,img):
+def curveFit(left,right,img,flag):
 	mask = np.zeros_like(img).astype(np.uint8)
 	left_lane = np.polyfit(left[:,1],left[:,0],2)
 	right_lane = np.polyfit(right[:,1],right[:,0],2)
@@ -69,7 +69,10 @@ def curveFit(left,right,img):
 	lPoint, rPoint = coordinates_left[200][0], coordinates_right[200][0]
 	#lPoint, rPoint = coordinates_left[0][0], coordinates_left[150][0]
 	#pred = predicTurn(img,lPoint,rPoint)
-	pred = radiusCurvatureStat(wspace,right_lane)
+	if flag==0:
+		pred = radiusCurvatureStat(wspace,right_lane)
+	else:
+		pred = radiusCurvature(wspace,right_lane)
 	points = np.hstack((coordinates_left, coordinates_right))
 	points = np.array([points],dtype=np.int32)[0]
 	print(points.shape)
