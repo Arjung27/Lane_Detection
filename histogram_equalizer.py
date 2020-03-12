@@ -6,7 +6,6 @@ import cv2
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from detection_pipeline import curveFit
-from detection_pipeline import predicTurn,predicTurnRevamped
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -141,7 +140,7 @@ def hough_tf_image(img, img_):
     # img_ = cv2.GaussianBlur(img_,(5,5),0)
     _, img_thresh = cv2.threshold(img_, 220, 255, cv2.THRESH_BINARY) # thresholding image to get a high intensity
     cv2.imshow("fig", img_thresh)
-    cv2.waitKey(0)
+    #cv2.waitKey(0)
     # cv2.imshow("edges1", img_thresh)
     # cv2.waitKey(0)
 
@@ -180,8 +179,8 @@ def hough_tf_image(img, img_):
     # cv2.waitKey(0)
 
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, 30, 10, 10)
-    left_pts = np.array([])
-    right_pts = np.array([])
+    left_pts = []
+    right_pts = []
     for x1, y1, x2, y2, in lines[:,0,:]:
         if np.abs((y2 - y1)/(x2 - x1)) < 2:
             continue
@@ -190,15 +189,17 @@ def hough_tf_image(img, img_):
             continue
         
         if x1 < img.shape[1]/2:
-            left_pts = np.append(left_pts, (x1, y1))
+            left_pts.append(([x1,y1]))
         elif x1 > img.shape[1]/2:
-            right_pts = np.append(right_pts, (x1, y1))     
+            right_pts.append(([x1,y1]))     
         if x2 < img.shape[1]/2:
-            left_pts = np.append(left_pts, (x2, y2))
+            left_pts.append(([x1,y1]))
         elif x2 > img.shape[1]/2:
-            right_pts = np.append(right_pts, (x2, y2))
+            right_pts.append(([x1,y1]))
                          
         cv2.line(img, (x1,y1), (x2, y2), (0,255,0), 2)
+    left_pts = np.asarray(left_pts)
+    right_pts = np.asarray(right_pts)
     if left_pts.shape == (0,):
         left_pts = np.zeros_like(right_pts)
     elif right_pts.shape == (0,):
@@ -261,7 +262,7 @@ def hist_count(img, img_):
     # hist_2 = cv2.calcHist([img],[2],None,[256],[0,256])
 
     cv2.imshow("lines",img)
-    cv2.waitKey(0)
+    #cv2.waitKey(0)
 
 
 
@@ -332,6 +333,9 @@ if __name__ == '__main__':
     elif sys.argv[2] == 'png':
 
         files = np.sort(glob.glob(sys.argv[1] + '/*', recursive=True))
+        vidWriter = cv2.VideoWriter("video_output.mp4",cv2.VideoWriter_fourcc(*'mp4v'), 24, (1280,720))
+        arrl_store = []
+        arrr_store = []
         for file in files:
             # print(file)
             img = cv2.imread(file)
@@ -344,6 +348,19 @@ if __name__ == '__main__':
             warped = cv2.warpPerspective(img, H, (img.shape[1], img.shape[0]))
             warped_ = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
             left_pts, right_pts, lines = hough_tf_image(warped, warped_)
+            if len(arrl_store)<3:
+                arrl_store.append(left_pts)
+                arrr_store.append(right_pts)
+            elif right_pts[right_pts.shape[0]-2,0]!=0 and left_pts[left_pts.shape[0]-2,0]!=0:
+                arrr_store.pop()
+                arrr_store.append(right_pts)
+                arrl_store.pop()
+                arrl_store.append(left_pts)
+            arr_templ = np.asarray(arrl_store)
+            arr_tempr = np.asarray(arrr_store)
+            lefty = arr_templ[arr_templ.shape[0]-1]
+            righty = arr_tempr[arr_tempr.shape[0]-1]    
+            lines,prediction = curveFit(lefty,righty,lines)
             # hist_count(warped, warped_)
             Hinv = np.linalg.inv(H)
             Hinv = Hinv/Hinv[2,2]
@@ -356,8 +373,13 @@ if __name__ == '__main__':
             img_dummy[patch] = img[patch]
             backProjected = cv2.warpPerspective(lines, Hinv, (img.shape[1], img.shape[0]))
             img_dummy = img_dummy + backProjected
+            cv2.putText(img_dummy, prediction, (200, 50),cv2.FONT_HERSHEY_SIMPLEX, 1.5,(0,255,0),2,\
+            cv2.LINE_AA)
 
             cv2.imshow("test", img_dummy)
+            #cv2.imwrite("lane_mask_stat.jpg",img_dummy)
             cv2.waitKey(0)
+            vidWriter.write(img_dummy.astype(np.uint8))
+    vidWriter.release()
 
     
