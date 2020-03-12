@@ -23,15 +23,18 @@ def predicTurn(img,l_point,r_point):
         predict = "Right Turn"
     return predict
 
-def predicTurnRevamped(img,lp_first,lp_second):
-    
-    if lp_first - lp_second>0:
-        predict = "Left Turn"
-    elif lp_first - lp_second<0:
-        predict = "Right Turn"
-    else:
-        predict = "Straight"
-    return predict
+def radiusCurvatureStat(p_x,p_y):
+	radC = ((1 + (2*p_y[0]*p_x + p_y[1])**2)**(1.5)) / (2*p_y[0])
+	print(np.mean(radC))
+	crad = np.mean(radC)
+	if crad>8000:
+		pred = "Turn Right"
+	elif crad<-1500:
+		pred = "Turn Left"
+	else:
+		pred = "Straight"
+	return pred
+
 
 def radiusCurvature(p_x,p_y):
 	radC = ((1 + (2*p_y[0]*p_x + p_y[1])**2)**(1.5)) / (2*p_y[0])
@@ -66,13 +69,16 @@ def curveFit(left,right,img):
 	lPoint, rPoint = coordinates_left[200][0], coordinates_right[200][0]
 	#lPoint, rPoint = coordinates_left[0][0], coordinates_left[150][0]
 	#pred = predicTurn(img,lPoint,rPoint)
-	pred = radiusCurvature(wspace,right_lane)
+	pred = radiusCurvatureStat(wspace,right_lane)
 	points = np.hstack((coordinates_left, coordinates_right))
 	points = np.array([points],dtype=np.int32)[0]
-	points = np.array([[[points[0,0],points[0,1]],[points[0,2],points[0,3]],[points[points.shape[0]/2,2]\
-		,points[points.shape[0]/2,3]]\
-		,[points[points.shape[0]-1,2],points[points.shape[0]-1,3]]\
-		,[points[points.shape[0]-1,0],points[points.shape[0]-1,1]],[points[points.shape[0]/2,0],points[points.shape[0]/2,1]]]])
+	print(points.shape)
+	#points = np.array([[[points[0,0],points[0,1]],[points[0,2],points[0,3]],[points[points.shape[0]/2,2]\
+	#	,points[points.shape[0]/2,3]]\
+	#	,[points[points.shape[0]-1,2],points[points.shape[0]-1,3]]\
+	#	,[points[points.shape[0]-1,0],points[points.shape[0]-1,1]],[points[points.shape[0]/2,0],points[points.shape[0]/2,1]]]])
+	points = np.array([[[points[0,0],points[0,1]],[points[0,2],points[0,3]],\
+		[points[points.shape[0]-1,2],points[points.shape[0]-1,3]],[points[points.shape[0]-1,0],points[points.shape[0]-1,1]]]])
 	cv2.fillPoly(mask,points,(0,255,0))
 	#image = cv2.warpPerspective(mask, np.linalg.inv(H),(IMG.shape[1], IMG.shape[0]))
 	fimage = cv2.addWeighted(img, 0.5, mask, 0.5, 0.0)
