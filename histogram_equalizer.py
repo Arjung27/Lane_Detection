@@ -303,8 +303,9 @@ if __name__ == '__main__':
             arr_templ = np.asarray(arrl_store)
             arr_tempr = np.asarray(arrr_store)
             lefty = arr_templ[arr_templ.shape[0]-1]
-            righty = arr_tempr[arr_tempr.shape[0]-1]    
-            lines,prediction = curveFit(lefty,righty,lines)
+            righty = arr_tempr[arr_tempr.shape[0]-1]  
+            flag =1  
+            lines,prediction = curveFit(lefty,righty,lines,flag)
             #print(prediction)
             Hinv = np.linalg.inv(H)
             Hinv = Hinv/Hinv[2,2]
@@ -359,8 +360,9 @@ if __name__ == '__main__':
             arr_templ = np.asarray(arrl_store)
             arr_tempr = np.asarray(arrr_store)
             lefty = arr_templ[arr_templ.shape[0]-1]
-            righty = arr_tempr[arr_tempr.shape[0]-1]    
-            lines,prediction = curveFit(lefty,righty,lines)
+            righty = arr_tempr[arr_tempr.shape[0]-1]
+            flag = 0    
+            lines,prediction = curveFit(lefty,righty,lines,flag)
             # hist_count(warped, warped_)
             Hinv = np.linalg.inv(H)
             Hinv = Hinv/Hinv[2,2]
