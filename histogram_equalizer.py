@@ -271,6 +271,7 @@ if __name__ == '__main__':
     if sys.argv[2] == 'mp4':
         video_file = sys.argv[1]
         cap = cv2.VideoCapture(video_file)
+        vidWriter = cv2.VideoWriter("video_output",cv2.VideoWriter_fourcc(*'mp4v'), 24, (1280,720))
 
         arrl_store = []
         arrr_store = []
@@ -322,8 +323,11 @@ if __name__ == '__main__':
             cv2.putText(img_dummy, prediction, (200, 50),cv2.FONT_HERSHEY_SIMPLEX, 1.5,(0,255,0),2,\
             cv2.LINE_AA)
             # print(backProjected)
-            cv2.imshow("test", img_dummy)
-            cv2.waitKey(0)
+            #cv2.imshow("test", img_dummy)
+            #cv2.imwrite("lane_mask_pred.jpg",img_dummy)
+            #cv2.waitKey(0)
+            vidWriter.write(img_dummy.astype(np.uint8))
+            vidWriter.release()
 
     elif sys.argv[2] == 'png':
 
@@ -355,3 +359,5 @@ if __name__ == '__main__':
 
             cv2.imshow("test", img_dummy)
             cv2.waitKey(0)
+
+    
