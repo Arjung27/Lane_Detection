@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 from detection_pipeline import curveFit
-from detection_pipeline import predicTurn
+from detection_pipeline import predicTurn,predicTurnRevamped
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -223,6 +223,7 @@ if __name__ == '__main__':
             lefty = arr_templ[arr_templ.shape[0]-1]
             righty = arr_tempr[arr_tempr.shape[0]-1]    
             lines,prediction = curveFit(lefty,righty,lines)
+            #print(prediction)
             Hinv = np.linalg.inv(H)
             Hinv = Hinv/Hinv[2,2]
             blank_white = 255*np.ones([720, 1280, 3])
@@ -238,7 +239,8 @@ if __name__ == '__main__':
             # patch2 = np.logical_or(img_dummy, backProjected)
             img_dummy = img_dummy + backProjected
             #prediction = predicTurn(img_dummy,L,R)
-            cv2.putText(img_dummy, prediction, (200, 50),cv2.FONT_HERSHEY_SIMPLEX, 1.5,(0,255,0),2, cv2.LINE_AA)
+            cv2.putText(img_dummy, prediction, (200, 50),cv2.FONT_HERSHEY_SIMPLEX, 1.5,(0,255,0),2,\
+            cv2.LINE_AA)
             # print(backProjected)
             cv2.imshow("test", img_dummy)
             cv2.waitKey(0)
