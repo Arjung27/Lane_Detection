@@ -37,9 +37,9 @@ def radiusCurvature(p_x,p_y):
 	radC = ((1 + (2*p_y[0]*p_x + p_y[1])**2)**(1.5)) / (2*p_y[0])
 	print(np.mean(radC))
 	crad = np.mean(radC)
-	if crad>0:
+	if crad>3000:
 		pred = "Turn Right"
-	elif crad<0:
+	elif crad<-6000:
 		pred = "Turn Left"
 	else:
 		pred = "Straight"
