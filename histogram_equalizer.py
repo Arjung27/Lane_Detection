@@ -293,7 +293,7 @@ if __name__ == '__main__':
             if len(arrl_store)<3:
                 arrl_store.append(left_pts)
                 arrr_store.append(right_pts)
-            elif right_pts[right_pts.shape[0]-5,0]!=0 and left_pts[left_pts.shape[0]-5,0]!=0:
+            elif right_pts[right_pts.shape[0]-2,0]!=0 and left_pts[left_pts.shape[0]-2,0]!=0:
                 arrr_store.pop()
                 arrr_store.append(right_pts)
                 arrl_store.pop()
